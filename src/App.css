@@ -544,6 +544,25 @@ html, body, #root {
   height: 100%;
 }
 
+/* Move zoom controls to bottom right */
+.leaflet-control-zoom {
+  top: auto !important;
+  bottom: 20px !important;
+  right: 20px !important;
+  left: auto !important;
+}
+
+.leaflet-control-zoom a {
+  background-color: white;
+  color: #333;
+  border: 1px solid #ccc;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.leaflet-control-zoom a:hover {
+  background-color: #f4f4f4;
+}
+
 /* Popup styles */
 .popup-content h3 {
   margin: 0 0 0.5rem 0;
