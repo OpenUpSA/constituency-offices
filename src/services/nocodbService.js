@@ -111,9 +111,14 @@ class NocoDBService {
 
   // Helper function to parse multiple MPs
   parseMPData(mpNames, mpImages, mpLinks) {
-    const names = mpNames ? mpNames.split(',').map(s => s.trim()).filter(s => s) : [];
-    const images = mpImages ? mpImages.split(',').map(s => s.trim()).filter(s => s) : [];
-    const links = mpLinks ? mpLinks.split(',').map(s => s.trim()).filter(s => s) : [];
+    // Ensure all inputs are strings before processing
+    const namesStr = mpNames ? String(mpNames).trim() : '';
+    const imagesStr = mpImages ? String(mpImages).trim() : '';
+    const linksStr = mpLinks ? String(mpLinks).trim() : '';
+    
+    const names = namesStr ? namesStr.split(',').map(s => s.trim()).filter(s => s) : [];
+    const images = imagesStr ? imagesStr.split(',').map(s => s.trim()).filter(s => s) : [];
+    const links = linksStr ? linksStr.split(',').map(s => s.trim()).filter(s => s) : [];
     
     const mps = [];
     const maxLength = Math.max(names.length, images.length, links.length);
