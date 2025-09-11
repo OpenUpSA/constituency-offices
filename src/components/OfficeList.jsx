@@ -195,35 +195,39 @@ const OfficeList = ({ offices = [], selectedOffice, onOfficeSelect, onFilterChan
                 </div>
                 <div className="office-card-body">
                   <div className="office-name">{office.name}</div>
-                  {office.mp && (
+                  {office.mps && office.mps.length > 0 && office.mps.some(mp => mp.name) && (
                     <div className="office-mp">
-                      <div className="mp-info">
-                        {office.mpImage && (
-                          <img 
-                            src={`https://static.pmg.org.za/${office.mpImage}`}
-                            alt={`${office.mp} photo`}
-                            className="mp-thumbnail"
-                            onError={(e) => {
-                              e.target.style.display = 'none';
-                            }}
-                          />
-                        )}
-                        <span className="mp-name">
-                          MP: {office.mpLink ? (
-                            <a 
-                              href={office.mpLink} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="mp-link"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              {office.mp}
-                            </a>
-                          ) : (
-                            office.mp
-                          )}
-                        </span>
-                      </div>
+                      {office.mps.map((mp, index) => (
+                        mp.name && (
+                          <div key={index} className="mp-info">
+                            {mp.image && (
+                              <img 
+                                src={`https://static.pmg.org.za/${mp.image}`}
+                                alt={`${mp.name} photo`}
+                                className="mp-thumbnail"
+                                onError={(e) => {
+                                  e.target.style.display = 'none';
+                                }}
+                              />
+                            )}
+                            <span className="mp-name">
+                              MP: {mp.link ? (
+                                <a 
+                                  href={mp.link} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="mp-link"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  {mp.name}
+                                </a>
+                              ) : (
+                                mp.name
+                              )}
+                            </span>
+                          </div>
+                        )
+                      ))}
                     </div>
                   )}
                 </div>

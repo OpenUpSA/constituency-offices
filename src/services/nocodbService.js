@@ -60,6 +60,11 @@ class NocoDBService {
         mpSelect: item.Party || item['MP Select'] || item.mpSelect || '',
         mpImage: item['MP Image'] || item.MPImage || '',
         mpLink: item['MP Link'] || item.MPLink || '',
+        mps: this.parseMPData(
+          item['MP Name'] || item.MPName || item.MP || '',
+          item['MP Image'] || item.MPImage || '',
+          item['MP Link'] || item.MPLink || ''
+        ),
         administratorDetails: item.AdministratorDetails || '',
         adminPerson: item.AdminPerson || '',
         adminPhone: item.AdminPhone || '',
@@ -102,6 +107,26 @@ class NocoDBService {
     
     console.warn('Could not parse lat/lon from:', latlonString);
     return { latitude: null, longitude: null };
+  }
+
+  // Helper function to parse multiple MPs
+  parseMPData(mpNames, mpImages, mpLinks) {
+    const names = mpNames ? mpNames.split(',').map(s => s.trim()).filter(s => s) : [];
+    const images = mpImages ? mpImages.split(',').map(s => s.trim()).filter(s => s) : [];
+    const links = mpLinks ? mpLinks.split(',').map(s => s.trim()).filter(s => s) : [];
+    
+    const mps = [];
+    const maxLength = Math.max(names.length, images.length, links.length);
+    
+    for (let i = 0; i < maxLength; i++) {
+      mps.push({
+        name: names[i] || '',
+        image: images[i] || '',
+        link: links[i] || ''
+      });
+    }
+    
+    return mps;
   }
 
   determineOfficeType(item) {
