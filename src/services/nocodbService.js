@@ -109,29 +109,23 @@ class NocoDBService {
     return { latitude: null, longitude: null };
   }
 
-  // Helper function to parse multiple MPs
+  // Helper function to parse MP data (single MP per office)
   parseMPData(mpNames, mpImages, mpLinks) {
-    // Ensure all inputs are strings before processing
-    const namesStr = mpNames ? String(mpNames).trim() : '';
-    const imagesStr = mpImages ? String(mpImages).trim() : '';
-    const linksStr = mpLinks ? String(mpLinks).trim() : '';
+    // Ensure all inputs are strings and handle single MP data
+    const name = mpNames ? String(mpNames).trim() : '';
+    const image = mpImages ? String(mpImages).trim() : '';
+    const link = mpLinks ? String(mpLinks).trim() : '';
     
-    const names = namesStr ? namesStr.split(',').map(s => s.trim()).filter(s => s) : [];
-    const images = imagesStr ? imagesStr.split(',').map(s => s.trim()).filter(s => s) : [];
-    const links = linksStr ? linksStr.split(',').map(s => s.trim()).filter(s => s) : [];
-    
-    const mps = [];
-    const maxLength = Math.max(names.length, images.length, links.length);
-    
-    for (let i = 0; i < maxLength; i++) {
-      mps.push({
-        name: names[i] || '',
-        image: images[i] || '',
-        link: links[i] || ''
-      });
+    // Return array with single MP object if name exists
+    if (name) {
+      return [{
+        name: name,
+        image: image,
+        link: link
+      }];
     }
     
-    return mps;
+    return [];
   }
 
   determineOfficeType(item) {
