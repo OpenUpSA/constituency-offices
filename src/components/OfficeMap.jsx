@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap, ZoomControl } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -260,8 +260,10 @@ const OfficeMap = ({ offices = [], selectedOffice = null, onMarkerClick, onBackT
           zoom={mapZoom}
           style={{ height: '100%', width: '100%' }}
           className="leaflet-map"
+          zoomControl={false}
         >
           <MapController center={mapCenter} zoom={mapZoom} />
+          <ZoomControl position="bottomright" />
           <TileLayer
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
