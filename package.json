@@ -10,7 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "axios": "^1.11.0",
+    "axios": "^1.12.1",
     "leaflet": "^1.9.4",
     "nocodb-sdk": "^0.264.6",
     "react": "^19.1.1",
