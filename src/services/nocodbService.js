@@ -14,20 +14,38 @@ class NocoDBService {
   }
 
   async fetchData() {
+    console.log('NocoDBService.fetchData: baseId', this.baseId, 'tableId', this.tableId);
     try {
       if (!this.baseId || !this.tableId) {
         console.warn('NocoDB configuration missing. Using mock data.');
         return this.getMockData();
       }
 
-      const response = await this.api.dbTableRow.list(
-        'noco',
-        this.baseId,
-        this.tableId
-      );
-      
-      const rawData = response.list || [];
-      return this.transformData(rawData);
+      let allRows = [];
+      let offset = 0;
+      const pageSize = 100; // NocoDB default/max is usually 100 or 200
+
+      while (true) {
+        console.log('Fetching offset', offset, 'with pageSize', pageSize);
+        const response = await this.api.dbTableRow.list(
+          'noco',
+          this.baseId,
+          this.tableId,
+          { offset, limit: pageSize }
+        );
+        console.log('Response for offset', offset, ':', response);
+        const rows = response.list || [];
+        allRows = allRows.concat(rows);
+
+        // If less than pageSize returned, or no more pages, break
+        if (!response.pageInfo || rows.length < pageSize) {
+          break;
+        }
+        offset += pageSize;
+      }
+
+      console.log('Total rows fetched from NocoDB:', allRows.length);
+      return this.transformData(allRows);
     } catch (error) {
       console.error('Error fetching data from NocoDB:', error);
       // Return mock data if NocoDB is not available
