@@ -761,23 +761,6 @@ html, body, #root {
   }
 }
 
-dialog.modal {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 9999;
-  padding: 1.5rem;
-  border: none;
-  border-radius: 8px;
-  background: white;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-}
-
-dialog.modal::backdrop {
-  background: rgba(0,0,0,0.5);
-}
-
 button.dialog-modal-control {
   background-color: transparent;
   border: none;

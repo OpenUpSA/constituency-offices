@@ -225,7 +225,8 @@ function App() {
               maxWidth: '600px',
               width: '90%',
               boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
-              textAlign: 'left'
+              textAlign: 'left',
+              color: '#000000'
             }}
           >
             <button
