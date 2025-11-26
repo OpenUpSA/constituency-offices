@@ -14,17 +14,19 @@ function App() {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const modalRef = useRef(null)
+  const mapRef = useRef(null)
 
-  const [isFirstUse, setIsFirstUse] = useState(false);
+
+  const [isFirstUse, setIsFirstUse] = useState(false)
 
   useEffect(() => {
-    const firstLoadShown = localStorage.getItem('modalFirstLoadShown');
+    const firstLoadShown = localStorage.getItem('modalFirstLoadShown')
     if (!firstLoadShown) {
-      setIsFirstUse(true);
-      setIsModalOpen(true);
-      localStorage.setItem('modalFirstLoadShown', 'true');
+      setIsFirstUse(true)
+      setIsModalOpen(true)
+      localStorage.setItem('modalFirstLoadShown', 'true')
     }
-  }, []);
+  }, [])
 
   useEffect(() => {
     const hasSeenModal = localStorage.getItem('hasSeenModal')
@@ -88,10 +90,27 @@ function App() {
   const handleBackToOverview = () => setSelectedOffice(null)
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen)
 
+  const geoLocate = () => {
+    if (!navigator.geolocation) {
+      alert('Geolocation not supported')
+      return
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const coords = [pos.coords.latitude, pos.coords.longitude]
+        if (mapRef.current && mapRef.current.setUserLocationOnMap) {
+          mapRef.current.setUserLocationOnMap(coords)
+        }
+      },
+      (err) => alert('Unable to retrieve location')
+    )
+  }
+
   const openModal = () => setIsModalOpen(true)
   const closeModal = () => {
-    setIsFirstUse(false);
-    setIsModalOpen(false);
+    setIsFirstUse(false)
+    setIsModalOpen(false)
   }
   const handleBackdropClick = (e) => {
     if (modalRef.current && e.target === modalRef.current) closeModal()
@@ -112,25 +131,46 @@ function App() {
           )}
           <h1>Constituency Offices</h1>
         </div>
+        <div>
+          {"geolocation" in navigator && (
+            <button className="header-button" onClick={geoLocate} aria-label="Open modal" title="Show nearest offices to my location">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 20 20"
+                xmlns="http://www.w3.org/2000/svg">
 
-        <button className="dialog-modal-control" onClick={openModal} aria-label="Open modal">
-          <svg
-            fill="#fff"
-            version="1.1"
-            viewBox="0 0 416.979 416.979"
-            xmlns="http://www.w3.org/2000/svg"
-            height="20px"
-            width="20px"
-          >
-            <g>
-              <path d="M356.004,61.156c-81.37-81.47-213.377-81.551-294.848-0.182c-81.47,81.371-81.552,213.379-0.181,294.85
+                <mask id="cutout">
+                  <rect width="20" height="20" fill="white" />
+                  <g transform="translate(-0.8, 0.6)">
+                    <path d="M10 10v6h2L16 6V4H14L4 8v2Z" fill="black" />
+                  </g>
+                </mask>
+
+                <circle cx="10" cy="10" r="10" fill="white" mask="url(#cutout)" />
+              </svg>
+            </button>
+          )}
+
+          <button className="header-button" onClick={openModal} aria-label="Open modal" title="Show information about this map">
+            <svg
+              fill="#fff"
+              height="20px"
+              width="20px"
+              version="1.1"
+              viewBox="0 0 416.979 416.979"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <g>
+                <path d="M356.004,61.156c-81.37-81.47-213.377-81.551-294.848-0.182c-81.47,81.371-81.552,213.379-0.181,294.85
                 c81.369,81.47,213.378,81.551,294.849,0.181C437.293,274.636,437.375,142.626,356.004,61.156z M237.6,340.786
                 c0,3.217-2.607,5.822-5.822,5.822h-46.576c-3.215,0-5.822-2.605-5.822-5.822V167.885c0-3.217,2.607-5.822,5.822-5.822h46.576
                 c3.215,0,5.822,2.604,5.822,5.822V340.786z M208.49,137.901c-18.618,0-33.766-15.146-33.766-33.765
                 c0-18.617,15.147-33.766,33.766-33.766c18.619,0,33.766,15.148,33.766,33.766C242.256,122.755,227.107,137.901,208.49,137.901z"/>
-            </g>
-          </svg>
-        </button>
+              </g>
+            </svg>
+          </button>
+        </div>
       </header>
 
       {error && (
@@ -154,6 +194,7 @@ function App() {
             </div>
             <div className="desktop-map">
               <OfficeMap
+                ref={mapRef}
                 offices={filteredOffices}
                 selectedOffice={selectedOffice}
                 onMarkerClick={handleMarkerClick}
@@ -261,7 +302,7 @@ function App() {
               <button
                 onClick={closeModal}
                 style={{
-                  display: 'block', 
+                  display: 'block',
                   margin: '1.5rem auto 0',
                   background: '#667eea',
                   color: 'white',
