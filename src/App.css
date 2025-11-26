@@ -768,3 +768,8 @@ button.dialog-modal-control {
   margin: 0;
   outline: none;
 }
+
+button.dialog-modal-control:focus-visible svg {
+  outline: 2px solid #000;
+  border-radius: 100%;
+}
