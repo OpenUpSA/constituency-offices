@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import OfficeMap from './components/OfficeMap'
 import OfficeList from './components/OfficeList'
 import nocodbService from './services/nocodbService'
@@ -10,84 +10,118 @@ function App() {
   const [selectedOffice, setSelectedOffice] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 768) // Open by default on desktop
+  const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 768)
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const modalRef = useRef(null)
+  const mapRef = useRef(null)
+
+
+  const [isFirstUse, setIsFirstUse] = useState(false)
+
+  useEffect(() => {
+    const firstLoadShown = localStorage.getItem('modalFirstLoadShown')
+    if (!firstLoadShown) {
+      setIsFirstUse(true)
+      setIsModalOpen(true)
+      localStorage.setItem('modalFirstLoadShown', 'true')
+    }
+  }, [])
+
+  useEffect(() => {
+    const hasSeenModal = localStorage.getItem('hasSeenModal')
+    if (!hasSeenModal) {
+      setIsModalOpen(true)
+      localStorage.setItem('hasSeenModal', 'true')
+    }
+  }, [])
 
   useEffect(() => {
     loadOffices()
   }, [])
 
   useEffect(() => {
-    // Initialize filtered offices when offices change
     setFilteredOffices(offices)
   }, [offices])
 
   useEffect(() => {
-    // Handle window resize to update mobile state and sidebar visibility
     const handleResize = () => {
       const mobile = window.innerWidth <= 768
       setIsMobile(mobile)
-      // On desktop, always show sidebar; on mobile, keep current state
-      if (!mobile && !sidebarOpen) {
-        setSidebarOpen(true)
-      }
+      if (!mobile && !sidebarOpen) setSidebarOpen(true)
     }
-
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [sidebarOpen])
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && isModalOpen) closeModal()
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isModalOpen])
 
   const loadOffices = async () => {
     try {
       setLoading(true)
       setError(null)
-      console.log('Loading offices...')
       const data = await nocodbService.fetchData()
-      console.log('Loaded offices:', data)
       setOffices(data)
     } catch (err) {
       setError('Failed to load office data')
-      console.error('Error loading offices:', err)
     } finally {
       setLoading(false)
     }
   }
 
   const handleOfficeSelect = (office) => {
-    console.log('Office selected:', office);
     setSelectedOffice(office)
-    // Close sidebar only on mobile when office is selected
-    if (isMobile) {
-      setSidebarOpen(false)
-    }
+    if (isMobile) setSidebarOpen(false)
   }
 
-  const handleMarkerClick = (office) => {
-    setSelectedOffice(office)
-  }
-
+  const handleMarkerClick = (office) => setSelectedOffice(office)
   const handleFilterChange = (filtered) => {
     setFilteredOffices(filtered)
-    // Only clear selected office if it's not in the filtered results
-    if (selectedOffice && !filtered.find(office => office.id === selectedOffice.id)) {
+    if (selectedOffice && !filtered.find(o => o.id === selectedOffice.id)) {
       setSelectedOffice(null)
     }
   }
+  const handleBackToOverview = () => setSelectedOffice(null)
+  const toggleSidebar = () => setSidebarOpen(!sidebarOpen)
 
-  const handleBackToOverview = () => {
-    setSelectedOffice(null)
+  const geoLocate = () => {
+    if (!navigator.geolocation) {
+      alert('Geolocation not supported')
+      return
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const coords = [pos.coords.latitude, pos.coords.longitude]
+        if (mapRef.current && mapRef.current.setUserLocationOnMap) {
+          mapRef.current.setUserLocationOnMap(coords)
+        }
+      },
+      (err) => alert('Unable to retrieve location')
+    )
   }
 
-  const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen)
+  const openModal = () => setIsModalOpen(true)
+  const closeModal = () => {
+    setIsFirstUse(false)
+    setIsModalOpen(false)
+  }
+  const handleBackdropClick = (e) => {
+    if (modalRef.current && e.target === modalRef.current) closeModal()
   }
 
   return (
     <div className="app">
-            <header className="app-header">
+      <header className="app-header">
         <div className="header-left">
           {isMobile && (
-            <button 
+            <button
               className="sidebar-toggle"
               onClick={toggleSidebar}
               aria-label="Toggle office list"
@@ -97,17 +131,56 @@ function App() {
           )}
           <h1>Constituency Offices</h1>
         </div>
+        <div>
+          {"geolocation" in navigator && (
+            <button className="header-button" onClick={geoLocate} aria-label="Open modal" title="Show nearest offices to my location">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 20 20"
+                xmlns="http://www.w3.org/2000/svg">
+
+                <mask id="cutout">
+                  <rect width="20" height="20" fill="white" />
+                  <g transform="translate(-0.8, 0.6)">
+                    <path d="M10 10v6h2L16 6V4H14L4 8v2Z" fill="black" />
+                  </g>
+                </mask>
+
+                <circle cx="10" cy="10" r="10" fill="white" mask="url(#cutout)" />
+              </svg>
+            </button>
+          )}
+
+          <button className="header-button" onClick={openModal} aria-label="Open modal" title="Show information about this map">
+            <svg
+              fill="#fff"
+              height="20px"
+              width="20px"
+              version="1.1"
+              viewBox="0 0 416.979 416.979"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <g>
+                <path d="M356.004,61.156c-81.37-81.47-213.377-81.551-294.848-0.182c-81.47,81.371-81.552,213.379-0.181,294.85
+                c81.369,81.47,213.378,81.551,294.849,0.181C437.293,274.636,437.375,142.626,356.004,61.156z M237.6,340.786
+                c0,3.217-2.607,5.822-5.822,5.822h-46.576c-3.215,0-5.822-2.605-5.822-5.822V167.885c0-3.217,2.607-5.822,5.822-5.822h46.576
+                c3.215,0,5.822,2.604,5.822,5.822V340.786z M208.49,137.901c-18.618,0-33.766-15.146-33.766-33.765
+                c0-18.617,15.147-33.766,33.766-33.766c18.619,0,33.766,15.148,33.766,33.766C242.256,122.755,227.107,137.901,208.49,137.901z"/>
+              </g>
+            </svg>
+          </button>
+        </div>
       </header>
 
       {error && (
         <div className="error-banner">
           <p>⚠️ {error}</p>
-          <button onClick={refreshData}>Try Again</button>
+          <button onClick={loadOffices}>Try Again</button>
         </div>
       )}
 
       <main className="app-main">
-        {/* Desktop: Side-by-side layout */}
         {!isMobile && (
           <div className="desktop-layout">
             <div className="desktop-sidebar">
@@ -121,6 +194,7 @@ function App() {
             </div>
             <div className="desktop-map">
               <OfficeMap
+                ref={mapRef}
                 offices={filteredOffices}
                 selectedOffice={selectedOffice}
                 onMarkerClick={handleMarkerClick}
@@ -130,14 +204,13 @@ function App() {
           </div>
         )}
 
-        {/* Mobile: Overlay Sidebar */}
         {isMobile && (
           <>
             <div className={`sidebar-overlay ${sidebarOpen ? 'open' : ''}`}>
               <div className="sidebar-backdrop" onClick={toggleSidebar}></div>
               <div className="sidebar">
                 <div className="sidebar-header">
-                  <button 
+                  <button
                     className="sidebar-close"
                     onClick={toggleSidebar}
                     aria-label="Close office list"
@@ -154,7 +227,7 @@ function App() {
                 />
               </div>
             </div>
-            
+
             <div className="mobile-map">
               <OfficeMap
                 offices={filteredOffices}
@@ -166,6 +239,87 @@ function App() {
           </>
         )}
       </main>
+
+      {isModalOpen && (
+        <div
+          ref={modalRef}
+          onClick={handleBackdropClick}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            background: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999
+          }}
+        >
+          <div
+            style={{
+              position: 'relative',
+              background: 'white',
+              borderRadius: '8px',
+              padding: '2rem',
+              maxWidth: '600px',
+              width: '90%',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
+              textAlign: 'left',
+              color: '#000000'
+            }}
+          >
+            <button
+              onClick={closeModal}
+              style={{
+                position: 'absolute',
+                top: '10px',
+                right: '10px',
+                background: 'transparent',
+                border: 'none',
+                fontSize: '1.25rem',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                color: '#666'
+              }}
+              aria-label="Close modal"
+            >
+              ×
+            </button>
+
+            <h2 style={{ marginTop: 0 }}>
+              Welcome to the South African Political Party Constituency Map
+            </h2>
+            <p>
+              Browse or search for the Constituency offices and MPs that represent you.
+              You will notice that some data is missing. Currently this is all the information
+              that has been made publicly available. If you have info about your local
+              constituency offices, please email <a href="mailto:monique@pmg.org.za">monique@pmg.org.za</a>.
+            </p>
+
+            {isFirstUse && (
+              <button
+                onClick={closeModal}
+                style={{
+                  display: 'block',
+                  margin: '1.5rem auto 0',
+                  background: '#667eea',
+                  color: 'white',
+                  border: 'none',
+                  padding: '0.75rem 2rem',
+                  borderRadius: '6px',
+                  cursor: 'pointer'
+                }}
+              >
+                Use Map
+              </button>
+
+            )}
+          </div>
+        </div>
+      )}
+
     </div>
   )
 }

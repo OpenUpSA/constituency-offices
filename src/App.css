@@ -532,7 +532,7 @@ html, body, #root {
 }
 
 .map-container {
-  border-radius: 8px;
+  border-radius: 0px;
   overflow: hidden;
   flex: 1;
   min-height: 500px;
@@ -759,4 +759,17 @@ html, body, #root {
   .sidebar-overlay .sidebar {
     width: 450px;
   }
+}
+
+button.header-button {
+  background-color: transparent;
+  border: none;
+  padding: 3px 0 0 0;
+  margin: 0 0 0 10px;
+  outline: none;
+}
+
+button.header-button:focus-visible svg {
+  outline: 2px solid #000;
+  border-radius: 100%;
 }
