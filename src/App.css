@@ -773,3 +773,8 @@ button.header-button:focus-visible svg {
   outline: 2px solid #000;
   border-radius: 100%;
 }
+
+.secondary-button {
+  font-size: smaller;
+  background-color: #333;
+}

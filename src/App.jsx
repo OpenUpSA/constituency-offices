@@ -179,26 +179,6 @@ function App() {
           <h1>Constituency Offices</h1>
         </div>
         <div>
-          {"geolocation" in navigator && (
-            <button className="header-button" onClick={geoLocate} aria-label="Open modal" title="Show nearest offices to my location">
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 20 20"
-                xmlns="http://www.w3.org/2000/svg">
-
-                <mask id="cutout">
-                  <rect width="20" height="20" fill="white" />
-                  <g transform="translate(-0.8, 0.6)">
-                    <path d="M10 10v6h2L16 6V4H14L4 8v2Z" fill="black" />
-                  </g>
-                </mask>
-
-                <circle cx="10" cy="10" r="10" fill="white" mask="url(#cutout)" />
-              </svg>
-            </button>
-          )}
-
           <button className="header-button" onClick={openModal} aria-label="Open modal" title="Show information about this map">
             <svg
               fill="#fff"
@@ -236,6 +216,7 @@ function App() {
                 selectedOffice={selectedOffice}
                 onOfficeSelect={handleOfficeSelect}
                 onFilterChange={handleFilterChange}
+                geoLocate={geoLocate}
                 loading={loading}
               />
             </div>
