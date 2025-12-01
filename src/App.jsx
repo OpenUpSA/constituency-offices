@@ -292,10 +292,10 @@ function App() {
               Welcome to the South African Political Party Constituency Map
             </h2>
             <p>
-              Explore and search for the constituency offices and Members of Parliament who represent you. Please note that some information is incomplete, and the level of detail varies across political parties. This map is a work in progress, built from publicly available data. You can view our <a href="https://pa.org.za/blog/" target="_blank">call to action here</a>.
+              Explore and search for the constituency offices and Members of Parliament who represent you. Please note that some information is incomplete, and the level of detail varies across political parties. This map is a work in progress, built from publicly available data. You can view our <a href="https://www.parlimeter.org.za/post/find-your-mp-and-constituency-office" target="_blank">call to action here</a>.
             </p>
             <p>
-              If you have additional details about your local constituency offices, please email us at <a href="mailto:admin@pmg.org.za">admin@pmg.org.za</a>.
+              If you have additional details about your local constituency offices, please email us at <a href="mailto:admin@pmg.org.za" target="_blank">admin@pmg.org.za</a>.
             </p>
 
             {isFirstUse && (
