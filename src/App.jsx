@@ -20,6 +20,13 @@ function App() {
   const [isFirstUse, setIsFirstUse] = useState(false)
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('usemylocation') === 'true') {
+      geoLocate()
+    }
+  }, [])
+
+  useEffect(() => {
     const firstLoadShown = localStorage.getItem('modalFirstLoadShown')
     if (!firstLoadShown) {
       setIsFirstUse(true)
