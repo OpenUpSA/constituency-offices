@@ -218,6 +218,7 @@ function App() {
                 onFilterChange={handleFilterChange}
                 geoLocate={geoLocate}
                 loading={loading}
+                geocodeAddress={geocodeAddress}
               />
             </div>
             <div className="desktop-map">

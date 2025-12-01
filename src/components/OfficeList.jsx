@@ -4,9 +4,7 @@ import { Scrollbar } from 'react-scrollbars-custom';
 // Helper function to get party logo
 const getPartyLogo = (partyCode) => {
   if (!partyCode || partyCode === 'Unknown') return null;
-
   try {
-    // Import the logo dynamically
     return new URL(`../assets/party-logos/${partyCode}.png`, import.meta.url).href;
   } catch (error) {
     console.warn(`Logo not found for party: ${partyCode}`);
@@ -14,75 +12,71 @@ const getPartyLogo = (partyCode) => {
   }
 };
 
-const OfficeList = ({ offices = [], selectedOffice, onOfficeSelect, onFilterChange, geoLocate, loading = false }) => {
+const OfficeList = ({
+  offices = [],
+  selectedOffice,
+  onOfficeSelect,
+  onFilterChange,
+  geoLocate,
+  loading = false,
+  geocodeAddress,
+}) => {
   const [selectedParty, setSelectedParty] = useState('all');
   const [selectedProvince, setSelectedProvince] = useState('all');
+  const [addressQuery, setAddressQuery] = useState('');
 
-  // Group offices by party and province, get unique values
+  // Set search input from URL q param on load
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const qParam = params.get('q');
+    if (qParam) setAddressQuery(qParam);
+  }, []);
+
+  // Group offices by party and province
   const { groupedOffices, parties, provinces } = useMemo(() => {
     const partyGroups = {};
     const provinceGroups = {};
     const uniqueParties = new Set();
     const uniqueProvinces = new Set();
 
-    offices.forEach(office => {
+    offices.forEach((office) => {
       const party = office.mpSelect || 'Unknown';
       const province = office.province || 'Unknown';
 
       uniqueParties.add(party);
       uniqueProvinces.add(province);
 
-      if (!partyGroups[party]) {
-        partyGroups[party] = [];
-      }
+      if (!partyGroups[party]) partyGroups[party] = [];
       partyGroups[party].push(office);
 
-      if (!provinceGroups[province]) {
-        provinceGroups[province] = [];
-      }
+      if (!provinceGroups[province]) provinceGroups[province] = [];
       provinceGroups[province].push(office);
     });
 
-    // Sort parties and provinces alphabetically, but put 'Unknown' at the end
-    const sortedParties = Array.from(uniqueParties).sort((a, b) => {
-      if (a === 'Unknown') return 1;
-      if (b === 'Unknown') return -1;
-      return a.localeCompare(b);
-    });
-
-    const sortedProvinces = Array.from(uniqueProvinces).sort((a, b) => {
-      if (a === 'Unknown') return 1;
-      if (b === 'Unknown') return -1;
-      return a.localeCompare(b);
-    });
+    const sortedParties = Array.from(uniqueParties).sort((a, b) =>
+      a === 'Unknown' ? 1 : b === 'Unknown' ? -1 : a.localeCompare(b)
+    );
+    const sortedProvinces = Array.from(uniqueProvinces).sort((a, b) =>
+      a === 'Unknown' ? 1 : b === 'Unknown' ? -1 : a.localeCompare(b)
+    );
 
     return {
       groupedOffices: { parties: partyGroups, provinces: provinceGroups },
       parties: sortedParties,
-      provinces: sortedProvinces
+      provinces: sortedProvinces,
     };
   }, [offices]);
 
-  // Filter offices based on selected party and province
+  // Filter offices by party/province only (search does not filter)
   const filteredOffices = useMemo(() => {
-    let filtered = offices;
-
-    if (selectedParty !== 'all') {
-      filtered = filtered.filter(office => (office.mpSelect || 'Unknown') === selectedParty);
-    }
-
-    if (selectedProvince !== 'all') {
-      filtered = filtered.filter(office => (office.province || 'Unknown') === selectedProvince);
-    }
-
-    return filtered;
+    return offices
+      .filter((office) => selectedParty === 'all' || (office.mpSelect || 'Unknown') === selectedParty)
+      .filter((office) => selectedProvince === 'all' || (office.province || 'Unknown') === selectedProvince);
   }, [offices, selectedParty, selectedProvince]);
 
-  // Notify parent component when filtered offices change
+  // Notify parent when filtered offices change
   useEffect(() => {
-    if (onFilterChange) {
-      onFilterChange(filteredOffices);
-    }
+    if (onFilterChange) onFilterChange(filteredOffices);
   }, [filteredOffices, onFilterChange]);
 
   if (loading) {
@@ -94,9 +88,40 @@ const OfficeList = ({ offices = [], selectedOffice, onOfficeSelect, onFilterChan
     );
   }
 
+  // Search form submit
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    if (geocodeAddress && addressQuery.trim()) {
+      const query = addressQuery.trim();
+      geocodeAddress(query);
+
+      // Update URL q param without reload
+      const url = new URL(window.location);
+      url.searchParams.set('q', query);
+      window.history.replaceState({}, '', url);
+    }
+  };
+
   return (
     <div className="office-list">
       <h3>Office Locations ({filteredOffices.length})</h3>
+
+      {/* Address Search Form */}
+      <form onSubmit={handleSearchSubmit} className="search-form">
+        <div className="search-input-group">
+          <input
+            type="text"
+            placeholder="Search by address..."
+            value={addressQuery}
+            onChange={(e) => setAddressQuery(e.target.value)}
+            className="search-input"
+          />
+          <button type="submit" className="search-button">
+            🔍
+          </button>
+        </div>
+      </form>
+
 
       {/* Filters */}
       <div className="filters">
@@ -109,7 +134,7 @@ const OfficeList = ({ offices = [], selectedOffice, onOfficeSelect, onFilterChan
             className="filter-selector"
           >
             <option value="all">All Parties ({offices.length})</option>
-            {parties.map(party => (
+            {parties.map((party) => (
               <option key={party} value={party}>
                 {party} ({groupedOffices.parties[party]?.length || 0})
               </option>
@@ -125,7 +150,7 @@ const OfficeList = ({ offices = [], selectedOffice, onOfficeSelect, onFilterChan
             className="filter-selector"
           >
             <option value="all">All Provinces ({offices.length})</option>
-            {provinces.map(province => (
+            {provinces.map((province) => (
               <option key={province} value={province}>
                 {province} ({groupedOffices.provinces[province]?.length || 0})
               </option>
@@ -133,10 +158,17 @@ const OfficeList = ({ offices = [], selectedOffice, onOfficeSelect, onFilterChan
           </select>
         </div>
       </div>
-        <button className="secondary-button" onClick={geoLocate} aria-label="Open modal" title="Show nearest offices to my location">
-          Party Offices Near Me
-        </button>
 
+      <button
+        className="secondary-button"
+        onClick={geoLocate}
+        aria-label="Open modal"
+        title="Show nearest offices to my location"
+      >
+        Party Offices Near Me
+      </button>
+
+      {/* Office Cards */}
       {filteredOffices.length === 0 ? (
         <div className="no-data">
           <p>No office data available.</p>
@@ -146,13 +178,7 @@ const OfficeList = ({ offices = [], selectedOffice, onOfficeSelect, onFilterChan
         <div className="office-items">
           <Scrollbar
             style={{ width: '100%', height: '100%' }}
-            thumbYProps={{
-              style: {
-                backgroundColor: '#cbd5e0',
-                borderRadius: '4px',
-                width: '8px'
-              }
-            }}
+            thumbYProps={{ style: { backgroundColor: '#cbd5e0', borderRadius: '4px', width: '8px' } }}
             trackYProps={{
               style: {
                 backgroundColor: '#f7fafc',
@@ -161,14 +187,10 @@ const OfficeList = ({ offices = [], selectedOffice, onOfficeSelect, onFilterChan
                 right: '0px',
                 position: 'absolute',
                 top: '0',
-                bottom: '0'
-              }
+                bottom: '0',
+              },
             }}
-            contentProps={{
-              style: {
-                paddingRight: '16px'
-              }
-            }}
+            contentProps={{ style: { paddingRight: '16px' } }}
           >
             {filteredOffices.map((office) => (
               <div
@@ -181,57 +203,55 @@ const OfficeList = ({ offices = [], selectedOffice, onOfficeSelect, onFilterChan
                     {office.mpSelect && (
                       <span className={`party-badge party-${office.mpSelect.toLowerCase().replace(/\s+/g, '-')}`}>
                         {getPartyLogo(office.mpSelect) && (
-                          <img
-                            src={getPartyLogo(office.mpSelect)}
-                            alt={`${office.mpSelect} logo`}
-                            className="party-logo"
-                          />
+                          <img src={getPartyLogo(office.mpSelect)} alt={`${office.mpSelect} logo`} className="party-logo" />
                         )}
                         {office.mpSelect}
                       </span>
                     )}
-                    <span className="province-text">
-                      {office.province || 'Unknown Province'}
-                    </span>
+                    <span className="province-text">{office.province || 'Unknown Province'}</span>
                   </div>
                 </div>
                 <div className="office-card-body">
                   <div className="office-name">{office.name}</div>
-                  {office.mps && office.mps.length > 0 && office.mps.some(mp => mp.name) && (
-                    <div className="office-mp">
-                      {office.mps.map((mp, index) => (
-                        mp.name && (
-                          <div key={index} className="mp-info">
-                            {mp.image && (
-                              <img
-                                src={`https://static.pmg.org.za/${mp.image}`}
-                                alt={`${mp.name} photo`}
-                                className="mp-thumbnail"
-                                onError={(e) => {
-                                  e.target.style.display = 'none';
-                                }}
-                              />
-                            )}
-                            <span className="mp-name">
-                              MP: {mp.link ? (
-                                <a
-                                  href={mp.link}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="mp-link"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  {mp.name}
-                                </a>
-                              ) : (
-                                mp.name
-                              )}
-                            </span>
-                          </div>
-                        )
-                      ))}
-                    </div>
-                  )}
+                  {office.mps &&
+                    office.mps.length > 0 &&
+                    office.mps.some((mp) => mp.name) && (
+                      <div className="office-mp">
+                        {office.mps.map(
+                          (mp, index) =>
+                            mp.name && (
+                              <div key={index} className="mp-info">
+                                {mp.image && (
+                                  <img
+                                    src={`https://static.pmg.org.za/${mp.image}`}
+                                    alt={`${mp.name} photo`}
+                                    className="mp-thumbnail"
+                                    onError={(e) => {
+                                      e.target.style.display = 'none';
+                                    }}
+                                  />
+                                )}
+                                <span className="mp-name">
+                                  MP:{' '}
+                                  {mp.link ? (
+                                    <a
+                                      href={mp.link}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="mp-link"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      {mp.name}
+                                    </a>
+                                  ) : (
+                                    mp.name
+                                  )}
+                                </span>
+                              </div>
+                            )
+                        )}
+                      </div>
+                    )}
                 </div>
               </div>
             ))}
