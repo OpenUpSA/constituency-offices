@@ -21,10 +21,12 @@ function App() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
-    if (params.get('usemylocation') === 'true') {
+    const useMyLocation = params.get('usemylocation') === 'true'
+
+    if (useMyLocation && !loading && offices.length) {
       geoLocate()
     }
-  }, [])
+  }, [loading, offices])
 
   useEffect(() => {
     const firstLoadShown = localStorage.getItem('modalFirstLoadShown')
