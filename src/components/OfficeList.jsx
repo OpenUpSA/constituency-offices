@@ -4,7 +4,7 @@ import { Scrollbar } from 'react-scrollbars-custom';
 // Helper function to get party logo
 const getPartyLogo = (partyCode) => {
   if (!partyCode || partyCode === 'Unknown') return null;
-  
+
   try {
     // Import the logo dynamically
     return new URL(`../assets/party-logos/${partyCode}.png`, import.meta.url).href;
@@ -14,7 +14,7 @@ const getPartyLogo = (partyCode) => {
   }
 };
 
-const OfficeList = ({ offices = [], selectedOffice, onOfficeSelect, onFilterChange, loading = false }) => {
+const OfficeList = ({ offices = [], selectedOffice, onOfficeSelect, onFilterChange, geoLocate, loading = false }) => {
   const [selectedParty, setSelectedParty] = useState('all');
   const [selectedProvince, setSelectedProvince] = useState('all');
 
@@ -24,14 +24,14 @@ const OfficeList = ({ offices = [], selectedOffice, onOfficeSelect, onFilterChan
     const provinceGroups = {};
     const uniqueParties = new Set();
     const uniqueProvinces = new Set();
-    
+
     offices.forEach(office => {
       const party = office.mpSelect || 'Unknown';
       const province = office.province || 'Unknown';
-      
+
       uniqueParties.add(party);
       uniqueProvinces.add(province);
-      
+
       if (!partyGroups[party]) {
         partyGroups[party] = [];
       }
@@ -66,15 +66,15 @@ const OfficeList = ({ offices = [], selectedOffice, onOfficeSelect, onFilterChan
   // Filter offices based on selected party and province
   const filteredOffices = useMemo(() => {
     let filtered = offices;
-    
+
     if (selectedParty !== 'all') {
       filtered = filtered.filter(office => (office.mpSelect || 'Unknown') === selectedParty);
     }
-    
+
     if (selectedProvince !== 'all') {
       filtered = filtered.filter(office => (office.province || 'Unknown') === selectedProvince);
     }
-    
+
     return filtered;
   }, [offices, selectedParty, selectedProvince]);
 
@@ -97,14 +97,14 @@ const OfficeList = ({ offices = [], selectedOffice, onOfficeSelect, onFilterChan
   return (
     <div className="office-list">
       <h3>Office Locations ({filteredOffices.length})</h3>
-      
+
       {/* Filters */}
       <div className="filters">
         <div className="filter-group">
           <label htmlFor="party-select">Filter by Party:</label>
-          <select 
+          <select
             id="party-select"
-            value={selectedParty} 
+            value={selectedParty}
             onChange={(e) => setSelectedParty(e.target.value)}
             className="filter-selector"
           >
@@ -116,12 +116,11 @@ const OfficeList = ({ offices = [], selectedOffice, onOfficeSelect, onFilterChan
             ))}
           </select>
         </div>
-
         <div className="filter-group">
           <label htmlFor="province-select">Filter by Province:</label>
-          <select 
+          <select
             id="province-select"
-            value={selectedProvince} 
+            value={selectedProvince}
             onChange={(e) => setSelectedProvince(e.target.value)}
             className="filter-selector"
           >
@@ -134,6 +133,9 @@ const OfficeList = ({ offices = [], selectedOffice, onOfficeSelect, onFilterChan
           </select>
         </div>
       </div>
+        <button className="secondary-button" onClick={geoLocate} aria-label="Open modal" title="Show nearest offices to my location">
+          Party Offices Near Me
+        </button>
 
       {filteredOffices.length === 0 ? (
         <div className="no-data">
@@ -179,8 +181,8 @@ const OfficeList = ({ offices = [], selectedOffice, onOfficeSelect, onFilterChan
                     {office.mpSelect && (
                       <span className={`party-badge party-${office.mpSelect.toLowerCase().replace(/\s+/g, '-')}`}>
                         {getPartyLogo(office.mpSelect) && (
-                          <img 
-                            src={getPartyLogo(office.mpSelect)} 
+                          <img
+                            src={getPartyLogo(office.mpSelect)}
                             alt={`${office.mpSelect} logo`}
                             className="party-logo"
                           />
@@ -201,7 +203,7 @@ const OfficeList = ({ offices = [], selectedOffice, onOfficeSelect, onFilterChan
                         mp.name && (
                           <div key={index} className="mp-info">
                             {mp.image && (
-                              <img 
+                              <img
                                 src={`https://static.pmg.org.za/${mp.image}`}
                                 alt={`${mp.name} photo`}
                                 className="mp-thumbnail"
@@ -212,9 +214,9 @@ const OfficeList = ({ offices = [], selectedOffice, onOfficeSelect, onFilterChan
                             )}
                             <span className="mp-name">
                               MP: {mp.link ? (
-                                <a 
-                                  href={mp.link} 
-                                  target="_blank" 
+                                <a
+                                  href={mp.link}
+                                  target="_blank"
                                   rel="noopener noreferrer"
                                   className="mp-link"
                                   onClick={(e) => e.stopPropagation()}
