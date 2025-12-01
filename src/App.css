@@ -72,6 +72,7 @@ html, body, #root {
   margin: 0;
   font-size: 1.4rem;
   font-weight: 600;
+  color: #000;
 }
 
 .header-actions {
@@ -817,4 +818,50 @@ button.header-button:focus-visible svg {
 
 .search-form {
   margin-bottom: 1em;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  height: 70px;
+  background: #fff;
+  border-bottom: 1px solid #ccc;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pa-logo {
+  height: 40px;  /* fits well inside 70px header */
+  display: block;
+}
+
+.header-title {
+  flex-grow: 1;
+  text-align: center;
+  margin: 0;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+}
+
+.sidebar-toggle,
+.header-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  width: 36px;
+  background: none;
+  border: none;
+  cursor: pointer;
 }
