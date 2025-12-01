@@ -20,11 +20,16 @@ function App() {
   const [isFirstUse, setIsFirstUse] = useState(false)
 
   useEffect(() => {
+    if (loading || offices.length === 0) return
+
     const params = new URLSearchParams(window.location.search)
     const useMyLocation = params.get('usemylocation') === 'true'
+    const addressQuery = params.get('q')?.trim()
 
-    if (useMyLocation && !loading && offices.length) {
-      geoLocate()
+    if (useMyLocation) {
+      geoLocate() // priority
+    } else if (addressQuery) {
+      geocodeAddress(addressQuery)
     }
   }, [loading, offices])
 
@@ -70,6 +75,39 @@ function App() {
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [isModalOpen])
+
+  const geocodeAddress = async (address) => {
+    try {
+      // Default to South Africa if not already included
+      const query = address.toLowerCase().includes('south africa')
+        ? address
+        : `${address}, South Africa`
+
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`,
+        {
+          headers: {
+            'User-Agent': 'Pombola/1.0 (admin@pmg.org.za)',
+            'Accept-Language': 'en',
+          },
+        }
+      )
+
+      const data = await response.json()
+
+      if (data && data.length > 0) {
+        const { lat, lon } = data[0]
+        if (mapRef.current && mapRef.current.setUserLocationOnMap) {
+          mapRef.current.setUserLocationOnMap([parseFloat(lat), parseFloat(lon)])
+        }
+      } else {
+        alert('Address not found')
+      }
+    } catch (err) {
+      console.error(err)
+      alert('Failed to look up address')
+    }
+  }
 
   const loadOffices = async () => {
     try {
