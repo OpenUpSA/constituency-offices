@@ -169,7 +169,7 @@ function App() {
         <div className="header-left">
           <a href="https://pa.org.za" className="pa-logo-link">
             <img
-              src="https://pa.org.za/static/images/navbar/pa_logo.ee2dd690fa3a.svg"
+              src="https://pa.org.za/static/images/navbar/pa_logo.svg"
               alt="PA Logo"
               className="pa-logo"
             />
