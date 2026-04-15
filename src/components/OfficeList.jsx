@@ -159,14 +159,14 @@ const OfficeList = ({
         </div>
       </div>
 
-      <button
+      {/* <button
         className="secondary-button"
         onClick={geoLocate}
         aria-label="Open modal"
         title="Show nearest offices to my location"
       >
         Party Offices Near Me
-      </button>
+      </button> */}
 
       {/* Office Cards */}
       {filteredOffices.length === 0 ? (
