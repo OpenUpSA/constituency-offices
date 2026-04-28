@@ -11,6 +11,7 @@ class NocoDBService {
     
     this.baseId = import.meta.env.VITE_NOCODB_BASE_ID;
     this.tableId = import.meta.env.VITE_NOCODB_TABLE_ID;
+    this.mpTableId = 'm7a7jwhbuhlahp2'; // MP_New table ID
   }
 
   async fetchData() {
@@ -20,6 +21,9 @@ class NocoDBService {
         console.warn('NocoDB configuration missing. Using mock data.');
         return this.getMockData();
       }
+
+      // Fetch all MPs first to create a lookup map
+      const mpsMap = await this.fetchAllMPs();
 
       let allRows = [];
       let offset = 0;
@@ -45,7 +49,7 @@ class NocoDBService {
       }
 
       console.log('Total rows fetched from NocoDB:', allRows.length);
-      return this.transformData(allRows);
+      return this.transformData(allRows, mpsMap);
     } catch (error) {
       console.error('Error fetching data from NocoDB:', error);
       // Return mock data if NocoDB is not available
@@ -53,7 +57,51 @@ class NocoDBService {
     }
   }
 
-  transformData(rawData) {
+  async fetchAllMPs() {
+    console.log('Fetching all MPs from table:', this.mpTableId);
+    try {
+      let allMPs = [];
+      let offset = 0;
+      const pageSize = 100;
+
+      while (true) {
+        const response = await this.api.dbTableRow.list(
+          'noco',
+          this.baseId,
+          this.mpTableId,
+          { offset, limit: pageSize }
+        );
+        const rows = response.list || [];
+        allMPs = allMPs.concat(rows);
+
+        if (!response.pageInfo || rows.length < pageSize) {
+          break;
+        }
+        offset += pageSize;
+      }
+
+      console.log('Total MPs fetched:', allMPs.length);
+
+      // Create a map of MP ID -> MP data
+      const mpsMap = {};
+      allMPs.forEach(mp => {
+        mpsMap[mp.ID] = {
+          id: mp.ID,
+          name: mp.Name,
+          party: mp.Party,
+          image: mp.ProfilePicUrl,
+          link: mp.PaLink
+        };
+      });
+
+      return mpsMap;
+    } catch (error) {
+      console.error('Error fetching MPs:', error);
+      return {};
+    }
+  }
+
+  transformData(rawData, mpsMap = {}) {
     return rawData.map(item => {
       // Parse latitude and longitude from Latlon field
       let latitude = null;
@@ -65,6 +113,12 @@ class NocoDBService {
         longitude = coords.longitude;
       }
 
+      // Parse MPs from the new M2M relationship (MP News field)
+      const mps = this.parseM2MMPData(item['MP News'], mpsMap);
+      
+      // Extract party from the office Party field or first MP
+      const party = item.Party || this.extractPartyFromMPs(mps);
+
       return {
         id: item.Id || item.id,
         name: item.PcoName || item.pcoName || 'Unknown Office',
@@ -74,15 +128,9 @@ class NocoDBService {
         type: this.determineOfficeType(item),
         part: item.Part || '',
         province: item.Province || '',
-        mp: item['MP Name'] || item.MPName || item.MP || '',
-        mpSelect: item.Party || item['MP Select'] || item.mpSelect || '',
-        mpImage: item['MP Image'] || item.MPImage || '',
-        mpLink: item['MP Link'] || item.MPLink || '',
-        mps: this.parseMPData(
-          item['MP Name'] || item.MPName || item.MP || '',
-          item['MP Image'] || item.MPImage || '',
-          item['MP Link'] || item.MPLink || ''
-        ),
+        mp: this.extractMPNames(mps), // Comma-separated MP names
+        mpSelect: party, // Party from office or first MP
+        mps: mps, // Array of MP objects with full details
         administratorDetails: item.AdministratorDetails || '',
         adminPerson: item.AdminPerson || '',
         adminPhone: item.AdminPhone || '',
@@ -144,6 +192,44 @@ class NocoDBService {
     }
     
     return [];
+  }
+
+  // Helper function to parse M2M MP data from the MP News field
+  parseM2MMPData(mpNewsArray, mpsMap = {}) {
+    if (!mpNewsArray || !Array.isArray(mpNewsArray)) {
+      return [];
+    }
+
+    return mpNewsArray.map(mp => {
+      const mpId = mp.ID;
+      const mpDetails = mpsMap[mpId] || {};
+      
+      return {
+        id: mpId,
+        name: mp.Name || mpDetails.name || '',
+        image: mpDetails.image || '',
+        link: mpDetails.link || '',
+        party: mpDetails.party || ''
+      };
+    }).filter(mp => mp.name); // Only include MPs with names
+  }
+
+  // Extract comma-separated MP names from array
+  extractMPNames(mpsArray) {
+    if (!mpsArray || mpsArray.length === 0) {
+      return '';
+    }
+    return mpsArray.map(mp => mp.name).filter(Boolean).join(', ');
+  }
+
+  // Extract party from first MP
+  extractPartyFromMPs(mpsArray) {
+    if (!mpsArray || mpsArray.length === 0) {
+      return '';
+    }
+    // Return party from first MP that has one
+    const mpWithParty = mpsArray.find(mp => mp.party);
+    return mpWithParty ? mpWithParty.party : '';
   }
 
   determineOfficeType(item) {
